@@ -5,6 +5,10 @@ fun main() {
     machine.menu()
 }
 
+enum class CofeeMachineState {
+    WAITINGREQUEST, WAITINGCOFEETYPE, OFF
+}
+
 enum class CofeeType {
     ESPRESSO {
         override val number: Int = 1
@@ -41,6 +45,7 @@ class CoffeeMachine() {
     private var cups: Int = 0
     private var money: Int = 0
     private var chosenCoffee: CofeeType = CofeeType.ESPRESSO
+    private var state: CofeeMachineState = CofeeMachineState.WAITINGREQUEST
 
     constructor(_water: Int, _milk: Int, _beans: Int, _cups: Int, _money: Int) : this() {
         this.water = _water
@@ -86,16 +91,49 @@ class CoffeeMachine() {
             }
         }
 
-    fun menu() {
-        while (true) {
-            println("Write action (buy, fill, take, remaining, exit):")
-            when (readLine()!!) {
-                "buy" -> buy()
+    fun readInput(input: String) {
+        if (state == CofeeMachineState.WAITINGREQUEST) {
+            when (input) {
+                "buy" -> {
+                    state = CofeeMachineState.WAITINGCOFEETYPE
+                }
                 "fill" -> fill()
                 "take" -> take()
                 "remaining" -> printBalance()
-                "exit" -> return
+                "exit" -> state = CofeeMachineState.OFF
             }
+        } else {
+            when (input) {
+                "1" -> {
+                    chosenCoffee = CofeeType.ESPRESSO
+                    buy()
+                    state = CofeeMachineState.WAITINGREQUEST
+                }
+                "2" -> {
+                    chosenCoffee = CofeeType.LATTE
+                    buy()
+                    state = CofeeMachineState.WAITINGREQUEST
+                }
+                "3" -> {
+                    chosenCoffee = CofeeType.CAPPUCCINO
+                    buy()
+                    state = CofeeMachineState.WAITINGREQUEST
+                }
+                "back" -> state = CofeeMachineState.WAITINGREQUEST
+            }
+        }
+    }
+
+    fun menu() {
+        while (true) {
+            if (state == CofeeMachineState.WAITINGREQUEST) {
+                println("Write action (buy, fill, take, remaining, exit):")
+            } else if (state == CofeeMachineState.WAITINGCOFEETYPE){
+                println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:")
+            } else {
+                return
+            }
+            readInput(readLine()!!)
         }
     }
 
@@ -107,19 +145,11 @@ class CoffeeMachine() {
     }
 
     private fun take() {
-        this.money = 0
         println("I gave you \$$money")
+        this.money = 0
     }
 
     private fun buy() {
-        println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:")
-        when (readLine()!!) {
-            "1" -> chosenCoffee = CofeeType.ESPRESSO
-            "2" -> chosenCoffee = CofeeType.LATTE
-            "3" -> chosenCoffee = CofeeType.CAPPUCCINO
-            "back" -> return
-        }
-
         if (totalPossibleCups > 0) {
             println("I have enough resources, making you a coffee!")
             money += chosenCoffee.cost
