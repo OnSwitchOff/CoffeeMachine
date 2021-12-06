@@ -1,57 +1,141 @@
 package machine
 
 fun main() {
-    val machine = CoffeeMachine()
-    machine.canIMakeNCups()
+    val machine = CoffeeMachine(400, 540, 120, 9, 550)
+    machine.printBalance()
+    machine.menu()
 }
 
-class CoffeeMachine {
+enum class CofeeType {
+    ESPRESSO {
+        override val number: Int = 1
+        override val waterPerCup: Int = 250
+        override val milkPerCup: Int = 0
+        override val beansPerCup: Int = 16
+        override val cost: Int = 4
+    },
+    LATTE {
+        override val number: Int = 2
+        override val waterPerCup: Int = 350
+        override val milkPerCup: Int = 75
+        override val beansPerCup: Int = 20
+        override val cost: Int = 7
+    },
+    CAPPUCCINO {
+        override val number: Int = 3
+        override val waterPerCup: Int = 200
+        override val milkPerCup: Int = 100
+        override val beansPerCup: Int = 12
+        override val cost: Int = 6
+    };
+    abstract val number: Int
+    abstract val waterPerCup: Int
+    abstract val milkPerCup: Int
+    abstract val beansPerCup: Int
+    abstract val cost: Int
+}
+
+class CoffeeMachine() {
     private var water: Int = 0
     private var milk: Int = 0
     private var beans: Int = 0
-    private var totalCupsByBeans: Int = 0
-    private var totalCupsByMilk: Int = 0
-    private var totalCupsByWater: Int = 0
-    private val totalPossibleCups: Int
-    get() {
-        return when {
-            this.totalCupsByBeans <= this.totalCupsByMilk && this.totalCupsByBeans <= this.totalCupsByWater -> this.totalCupsByBeans
-            this.totalCupsByMilk <= this.totalCupsByWater -> this.totalCupsByMilk
-            else -> this.totalCupsByWater
-        }
-    }
+    private var cups: Int = 0
+    private var money: Int = 0
+    private var chosenCoffee: CofeeType = CofeeType.ESPRESSO
 
-    constructor(_water: Int, _milk: Int, _beans: Int) {
+    constructor(_water: Int, _milk: Int, _beans: Int, _cups: Int, _money: Int) : this() {
         this.water = _water
         this.milk = _milk
         this.beans = _beans
-        calcTotalCups(this.water, this.milk, this.beans)
+        this.cups = _cups
+        this.money =_money
     }
 
-    constructor() {
-        this.water = askInt("Write how many ml of water the coffee machine has:")
-        this.milk = askInt("Write how many ml of milk the coffee machine has:")
-        this.beans = askInt("Write how many grams of coffee beans the coffee machine has:")
-        calcTotalCups(this.water, this.milk, this.beans)
-    }
-
-    private fun calcTotalCups (_water: Int, _milk: Int, _beans: Int) {
-        this.totalCupsByWater = _water / waterPerCup
-        this.totalCupsByMilk = _milk / milkPerCup
-        this.totalCupsByBeans = _beans / beansPerCup
-    }
-
-    companion object {
-        private const val waterPerCup = 200
-        private const val milkPerCup = 50
-        private const val beansPerCup = 15
-
-        fun calcTotalIngredients(cupNumber: Int) {
-            println("For $cupNumber cups of coffee you will need:")
-            println("${cupNumber * waterPerCup} ml of water")
-            println("${cupNumber * milkPerCup} ml of milk")
-            println("${cupNumber * beansPerCup} g of coffee beans")
+    private val totalCupsByBeans: Int
+        get() {
+            return try {
+                this.beans / this.chosenCoffee.beansPerCup
+            } catch (e: ArithmeticException) {
+                Int.MAX_VALUE
+            }
         }
+    private val totalCupsByMilk: Int
+        get() {
+            return try { this.milk / this.chosenCoffee.milkPerCup
+                } catch (e: ArithmeticException) {
+                Int.MAX_VALUE
+            }
+        }
+    private val totalCupsByWater: Int
+        get() {
+            return try {
+                return this.water / this.chosenCoffee.waterPerCup
+            } catch (e: ArithmeticException) {
+                Int.MAX_VALUE
+            }
+        }
+    private val totalPossibleCups: Int
+        get() {
+            return when {
+                this.totalCupsByBeans <= this.totalCupsByMilk
+                        && this.totalCupsByBeans <= this.cups
+                        && this.totalCupsByBeans <= this.totalCupsByWater -> this.totalCupsByBeans
+                this.totalCupsByMilk <= this.totalCupsByWater
+                        && this.totalCupsByMilk <= this.cups -> this.totalCupsByMilk
+                this.totalCupsByWater <= this.cups -> this.totalCupsByWater
+                else -> this.cups
+            }
+        }
+
+    fun menu() {
+        println("Write action (buy, fill, take):")
+        val input = readLine()!!
+        when (input) {
+            "buy" -> buy()
+            "fill" -> fill()
+            "take" -> take()
+        }
+    }
+
+    fun fill() {
+        this.water += askInt("Write how many ml of water do you want to add:")
+        this.milk += askInt("Write how many ml of milk do you want to add:")
+        this.beans += askInt("Write how many grams of coffee beans do you want to add:")
+        this.cups += askInt("Write how many disposable cups of coffee do you want to add:")
+        printBalance()
+    }
+
+    fun take() {
+        this.money = 0
+        println("I gave you \$$money")
+        printBalance()
+    }
+
+    fun buy() {
+        val chose = askInt("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino:")
+        when (chose) {
+            1 -> chosenCoffee = CofeeType.ESPRESSO
+            2 -> chosenCoffee = CofeeType.LATTE
+            3 -> chosenCoffee = CofeeType.CAPPUCCINO
+        }
+
+        if (totalPossibleCups > 0) {
+            money += chosenCoffee.cost
+            water -= chosenCoffee.waterPerCup
+            milk -= chosenCoffee.milkPerCup
+            beans -= chosenCoffee.beansPerCup
+            cups--
+        }
+        printBalance()
+    }
+
+    fun printBalance() {
+        println("The coffee machine has:")
+        println("$water of water")
+        println("$milk of milk")
+        println("$beans of coffee beans")
+        println("$cups of disposable cups")
+        println("$money of money")
     }
 
     private fun askInt(message: String): Int {
