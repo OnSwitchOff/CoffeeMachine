@@ -2,7 +2,6 @@ package machine
 
 fun main() {
     val machine = CoffeeMachine(400, 540, 120, 9, 550)
-    machine.printBalance()
     machine.menu()
 }
 
@@ -88,48 +87,56 @@ class CoffeeMachine() {
         }
 
     fun menu() {
-        println("Write action (buy, fill, take):")
-        val input = readLine()!!
-        when (input) {
-            "buy" -> buy()
-            "fill" -> fill()
-            "take" -> take()
+        while (true) {
+            println("Write action (buy, fill, take, remaining, exit):")
+            when (readLine()!!) {
+                "buy" -> buy()
+                "fill" -> fill()
+                "take" -> take()
+                "remaining" -> printBalance()
+                "exit" -> return
+            }
         }
     }
 
-    fun fill() {
+    private fun fill() {
         this.water += askInt("Write how many ml of water do you want to add:")
         this.milk += askInt("Write how many ml of milk do you want to add:")
         this.beans += askInt("Write how many grams of coffee beans do you want to add:")
         this.cups += askInt("Write how many disposable cups of coffee do you want to add:")
-        printBalance()
     }
 
-    fun take() {
+    private fun take() {
         this.money = 0
         println("I gave you \$$money")
-        printBalance()
     }
 
-    fun buy() {
-        val chose = askInt("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino:")
-        when (chose) {
-            1 -> chosenCoffee = CofeeType.ESPRESSO
-            2 -> chosenCoffee = CofeeType.LATTE
-            3 -> chosenCoffee = CofeeType.CAPPUCCINO
+    private fun buy() {
+        println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:")
+        when (readLine()!!) {
+            "1" -> chosenCoffee = CofeeType.ESPRESSO
+            "2" -> chosenCoffee = CofeeType.LATTE
+            "3" -> chosenCoffee = CofeeType.CAPPUCCINO
+            "back" -> return
         }
 
         if (totalPossibleCups > 0) {
+            println("I have enough resources, making you a coffee!")
             money += chosenCoffee.cost
             water -= chosenCoffee.waterPerCup
             milk -= chosenCoffee.milkPerCup
             beans -= chosenCoffee.beansPerCup
             cups--
         }
-        printBalance()
+        else {
+            if (this.water < chosenCoffee.waterPerCup) println("Sorry, not enough water!")
+            if (this.milk < chosenCoffee.milkPerCup) println("Sorry, not enough milk!")
+            if (this.beans < chosenCoffee.beansPerCup) println("Sorry, not enough coffee beans!")
+            if (this.cups < 1) println("Sorry, not enough disposable cups!")
+        }
     }
 
-    fun printBalance() {
+    private fun printBalance() {
         println("The coffee machine has:")
         println("$water of water")
         println("$milk of milk")
